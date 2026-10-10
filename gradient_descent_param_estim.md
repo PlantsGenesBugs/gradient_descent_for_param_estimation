@@ -27,10 +27,256 @@ In this file I will be using a fourth method called **gradient
 descent**. Gradient descent is a method that aims to find the “line of
 best fit” by minimising a value that assesses the quality of that fit
 (somewhat like finding the smallest sum of squares). The value we will
-be using is the mean square error, and in this context it is also called
-the cost function. This is the value we want to optimise. Mean square
-error is essentially the residual sum of squares divided by 2n:
+be using is the mean square error (MSE), and in this context it is also
+called the cost function. This is the value we want to minimise. The
+mean square error is essentially the residual sum of squares divided by
+2n:
 
 $$
 \frac{1}{2n}(y - X\beta)^T(y - X\beta)
 $$
+
+The algorithm works by repeatedly adjusting the model parameters, based
+on the direction of steepest decrease in the cost function. This
+iterative approach helps the model converge toward the optimal solution,
+taking the following steps:
+
+1.  Initial values are (randomly) assigned to the parameters for our
+    parameters.
+2.  A learning rate (alpha) is set. This value controls the size of the
+    jump during the iterative process (the size of change in parameter
+    values between iterative cycles).
+3.  The parameters are iteratively updated using the following formula:
+
+$$\beta^{(j+1)} = \beta^{(j)} - \alpha \frac{\partial}{\partial \beta^{(j)}} J(\beta_0, \beta_1, \dots, \beta_p) = \beta^{(j)} - \alpha \frac{1}{n} \sum_{i=1}^{n} [y_i - f(\underline{x}_i)] x_{ij}$$
+The current parameter is adjusted by subtracting the learning rate
+multiplied by the gradient (partial derivative) of the cost function.
+This calculation is preformed for one variable at a time, and each one
+is updated after every iterative round. 4. The process is stopped once
+it reaches a pre-defined stopping rule. This could be the number of
+iterations or when the difference between the value of the cost function
+for the two most recent rounds falls underneath a prescribed threshold.
+
+The learning rate and stopping rule are also known as hyperparameters.
+These can be optimised to ensure accurate estimation. For example, for
+the learning rate different values (0.1, 0.01. and 0.001) can be used to
+test the difference.
+
+``` r
+# load all required packages
+library(tidyverse)
+```
+
+    ## Warning: package 'ggplot2' was built under R version 4.4.3
+
+    ## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+    ## ✔ dplyr     1.1.4     ✔ readr     2.1.5
+    ## ✔ forcats   1.0.0     ✔ stringr   1.5.1
+    ## ✔ ggplot2   4.0.2     ✔ tibble    3.3.0
+    ## ✔ lubridate 1.9.4     ✔ tidyr     1.3.1
+    ## ✔ purrr     1.1.0     
+    ## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+    ## ✖ dplyr::filter() masks stats::filter()
+    ## ✖ dplyr::lag()    masks stats::lag()
+    ## ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+
+``` r
+library(readxl)
+
+# download data from Kaggle: https://www.kaggle.com/datasets/jvikumyasarathne/renewable-energy-data-set/data
+# or download using RKaggle
+#install.packages("RKaggle")
+#library(RKaggle)
+
+# renewables_data <- RKaggle::get_dataset("jakewright/house-price-data")
+
+
+renewables_data <- read_excel("Renewable_Energy_Dataset.xlsx")
+
+# plan is to use wind energy data, split by onshore/offshore, model one, then model other to compare
+# model daily energy output by wind speed
+
+onshore_wind <- renewables_data %>%
+  filter(Technology_Type == "Wind Onshore")
+
+offshore_wind <- renewables_data %>%
+  filter(Technology_Type == "Wind Offshore")
+
+
+ggplot(renewables_data, aes(x = Equipment_Age_Years, y = Daily_Energy_Output_MWh)) +
+    geom_point()
+```
+
+![](gradient_descent_param_estim_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
+
+``` r
+renewables_data %>% filter(Technology_Type=="Solar PV") %>% filter(Daily_Energy_Output_MWh<800) %>% filter(Daily_Energy_Output_MWh>100) %>% ggplot(aes(x = Solar_Irradiance_kWh_m2, y = Daily_Energy_Output_MWh)) +
+    geom_point()
+```
+
+![](gradient_descent_param_estim_files/figure-gfm/unnamed-chunk-1-2.png)<!-- -->
+
+``` r
+df <- renewables_data %>% filter(Technology_Type=="Solar PV") %>% filter(Daily_Energy_Output_MWh>800 | Daily_Energy_Output_MWh<100)
+m <- lm(Daily_Energy_Output_MWh ~ Solar_Irradiance_kWh_m2, data=df)
+summary(m)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = Daily_Energy_Output_MWh ~ Solar_Irradiance_kWh_m2, 
+    ##     data = df)
+    ## 
+    ## Residuals:
+    ##    Min     1Q Median     3Q    Max 
+    ## -405.0 -355.1 -329.3  440.9  485.2 
+    ## 
+    ## Coefficients:
+    ##                         Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)               337.21      45.88    7.35 3.63e-13 ***
+    ## Solar_Irradiance_kWh_m2    15.69      10.26    1.53    0.126    
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 396 on 1206 degrees of freedom
+    ## Multiple R-squared:  0.001936,   Adjusted R-squared:  0.001108 
+    ## F-statistic: 2.339 on 1 and 1206 DF,  p-value: 0.1264
+
+``` r
+y <- df$Daily_Energy_Output_MWh
+x <- df$Solar_Irradiance_kWh_m2
+```
+
+Here we want to minimise (optimise) the cost function, represented by
+the Mean Squared Error. We start by choosing the initial parameters and
+then iterating over the cost function, using gradient descent to choose
+the next value(s) of the variables per iteration. To note: optimisation
+algorithms don’t always produce the same results for all choices of
+initialisations.
+
+``` r
+cost_fn <- function(X, y, coef) {
+    sum( (X %*% coef - y)^2 ) / (2*length(y))
+}
+
+# First we set alpha and the number of iterations we will perform
+alpha <- 0.05
+num_iters <- 2000
+
+# next we will initialise regression coefficients; start all at 0.1
+coef <- matrix(c(0.1,0.1), nrow=2)
+X <- cbind(1, matrix(x))
+res <- vector("list", num_iters)
+
+
+for (i in 1:num_iters) {
+  error <- (X %*% coef - y)
+  delta <- t(X) %*% error / length(y)
+  coef <- coef - alpha * delta
+  res_df <- data.frame(itr = i , cost = cost_fn(X, y, coef),
+                   b0 = coef[1], b1 = coef[2])
+
+  res[[i]] <- res_df
+}
+```
+
+Combine all results into a simple data frame. If we look at the final
+values in the resulting variable we see that b0 and b1 seem to have
+converged on fixed values.
+
+``` r
+res_df <- bind_rows(res)
+tail(res_df)
+```
+
+    ##       itr     cost       b0       b1
+    ## 1995 1995 78290.34 336.3281 15.87882
+    ## 1996 1996 78290.34 336.3307 15.87825
+    ## 1997 1997 78290.34 336.3333 15.87768
+    ## 1998 1998 78290.34 336.3359 15.87712
+    ## 1999 1999 78290.34 336.3385 15.87656
+    ## 2000 2000 78290.34 336.3410 15.87600
+
+We can look at the convergence of the parameters, the cost function
+itself or even the estimated y at each step of the optimisation.
+
+``` r
+ggplot(res_df, aes(x = itr, y = b1)) +
+    geom_line() +
+    labs(x = "Iteration",
+         y = "Estimated beta_1",
+         title = "Visualisation of the cconvergence of the beta_1 parameter")
+```
+
+![](gradient_descent_param_estim_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+We can also compare the values we have determined by gradient descent to
+those predicted by linear modeling.
+
+``` r
+fit <- lm(y ~ x)
+
+coef(fit)
+```
+
+    ## (Intercept)           x 
+    ##   337.21368    15.68647
+
+These are quite close, so our approach has worked. However, to
+illustrate how sensitive gradient descent is to the starting conditions,
+I will show you my initial results below, showing the effect of a step
+size that is too big: the value for the coefficient doesn’t converge and
+swings wildly between two extremes.
+
+``` r
+# Set alpha and the number of iterations we will perform
+alpha <- 0.1
+num_iters <- 100
+
+# Initialise regression coefficients; start all at 0.1
+coef <- matrix(c(0.1,0.1), nrow=2)
+X <- cbind(1, matrix(x))
+res <- vector("list", num_iters)
+
+
+for (i in 1:num_iters) {
+  error <- (X %*% coef - y)
+  delta <- t(X) %*% error / length(y)
+  coef <- coef - alpha * delta
+  res_df <- data.frame(itr = i , cost = cost_fn(X, y, coef),
+                   b0 = coef[1], b1 = coef[2])
+
+  res[[i]] <- res_df
+}
+
+res_df <- bind_rows(res)
+
+ggplot(res_df, aes(x = itr, y = b1)) +
+    geom_line() +
+    labs(x = "Iteration",
+         y = "Estimated beta_1",
+         title = "Visualisation of the cconvergence of the beta_1 parameter")
+```
+
+![](gradient_descent_param_estim_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+There is a way to calculate a suitable alpha. This depends on the number
+of observations and the largest eigenvalue. The largest eigenvalue
+measures the maximum curvature of the quadratic function associated with
+the matrix $X^\top X/n$. It can therefore be used to determine a
+suitable learning rate for gradient-based optimisation.
+
+``` r
+n <- length(y)
+
+lambda_max <- max(
+  eigen(crossprod(X) / n,
+        symmetric = TRUE,
+        only.values = TRUE)$values
+)
+
+alpha_max <- 2 / lambda_max
+
+c(alpha_max = alpha_max, current_alpha = alpha)
+```
+
+    ##     alpha_max current_alpha 
+    ##    0.09546133    0.10000000

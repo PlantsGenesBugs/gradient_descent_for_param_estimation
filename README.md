@@ -1,2 +1,3 @@
-# gradient_descent_for_param_estimation
-Using gradient descent on the cost function, to estimate parameters in linear regression
+# Gradient descent for parameter estimation  
+
+In this repository I have analysed data from the [renewable energy dataset on Kaggle](https://www.kaggle.com/datasets/vikumyasarathne/renewable-energy-data-set/). Parameters were estimated by applying gradient descent. This method is an optimisation algorithm, regularly used to minimise the error in machine learning models, here applied in a simple linear regression. 
