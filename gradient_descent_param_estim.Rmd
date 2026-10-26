@@ -1,5 +1,5 @@
 ---
-ttitle: "Gradient descent for parameter estimation"
+title: "Gradient descent for parameter estimation"
 author: "PGB"
 date: "2026-10-08"
 output:
@@ -26,8 +26,11 @@ The algorithm works by repeatedly adjusting the model parameters, based on the d
 2. A learning rate (alpha) is set. This value controls the size of the jump during the iterative process (the size of change in parameter values between iterative cycles). 
 3. The parameters are iteratively updated using the following formula: 
 
-$$\beta^{(j+1)} = \beta^{(j)} - \alpha \frac{\partial}{\partial \beta^{(j)}} J(\beta_0, \beta_1, \dots, \beta_p) = \beta^{(j)} - \alpha \frac{1}{n} \sum_{i=1}^{n} [y_i - f(\underline{x}_i)] x_{ij}$$
-The current parameter is adjusted by subtracting the learning rate multiplied by the gradient (partial derivative) of the cost function. This calculation is preformed for one variable at a time, and each one is updated after every iterative round.
+\[
+\beta^{(j+1)} = \beta^{(j)} - \alpha \frac{\partial}{\partial \beta^{(j)}} J(\beta_0, \beta_1, \dots, \beta_p) = \beta^{(j)} - \alpha \frac{1}{n} \sum_{i=1}^{n} [y_i - f(\underline{x}_i)] x_{ij}
+\]
+
+The current parameter is adjusted by subtracting the learning rate multiplied by the gradient (partial derivative) of the cost function. This calculation is preformed for one variable at a time, and each one is updated after every iterative round.  
 4. The process is stopped once it reaches a pre-defined stopping rule. This could be the number of iterations or when the difference between the value of the cost function for the two most recent rounds falls underneath a prescribed threshold.
 
 The learning rate and stopping rule are also known as hyperparameters. These can be optimised to ensure accurate estimation. For example, for the learning rate different values (0.1, 0.01. and 0.001) can be used to test the difference. 

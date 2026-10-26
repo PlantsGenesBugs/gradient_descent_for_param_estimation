@@ -1,3 +1,5 @@
+Gradient descent for parameter estimation
+================
 PGB
 2026-10-08
 
@@ -48,14 +50,18 @@ taking the following steps:
     values between iterative cycles).
 3.  The parameters are iteratively updated using the following formula:
 
-$$\beta^{(j+1)} = \beta^{(j)} - \alpha \frac{\partial}{\partial \beta^{(j)}} J(\beta_0, \beta_1, \dots, \beta_p) = \beta^{(j)} - \alpha \frac{1}{n} \sum_{i=1}^{n} [y_i - f(\underline{x}_i)] x_{ij}$$
+$$
+\beta^{(j+1)} = \beta^{(j)} - \alpha \frac{\partial}{\partial \beta^{(j)}} J(\beta_0, \beta_1, \dots, \beta_p) = \beta^{(j)} - \alpha \frac{1}{n} \sum_{i=1}^{n} [y_i - f(\underline{x}_i)] x_{ij}
+$$
+
 The current parameter is adjusted by subtracting the learning rate
 multiplied by the gradient (partial derivative) of the cost function.
 This calculation is preformed for one variable at a time, and each one
-is updated after every iterative round. 4. The process is stopped once
-it reaches a pre-defined stopping rule. This could be the number of
-iterations or when the difference between the value of the cost function
-for the two most recent rounds falls underneath a prescribed threshold.
+is updated after every iterative round.\
+4. The process is stopped once it reaches a pre-defined stopping rule.
+This could be the number of iterations or when the difference between
+the value of the cost function for the two most recent rounds falls
+underneath a prescribed threshold.
 
 The learning rate and stopping rule are also known as hyperparameters.
 These can be optimised to ensure accurate estimation. For example, for
@@ -69,12 +75,14 @@ library(tidyverse)
 
     ## Warning: package 'ggplot2' was built under R version 4.4.3
 
+    ## Warning: package 'tibble' was built under R version 4.4.3
+
     ## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-    ## ✔ dplyr     1.1.4     ✔ readr     2.1.5
-    ## ✔ forcats   1.0.0     ✔ stringr   1.5.1
-    ## ✔ ggplot2   4.0.2     ✔ tibble    3.3.0
-    ## ✔ lubridate 1.9.4     ✔ tidyr     1.3.1
-    ## ✔ purrr     1.1.0     
+    ## ✔ dplyr     1.2.1.9000     ✔ readr     2.1.5     
+    ## ✔ forcats   1.0.0          ✔ stringr   1.5.1     
+    ## ✔ ggplot2   4.0.2          ✔ tibble    3.3.1     
+    ## ✔ lubridate 1.9.4          ✔ tidyr     1.3.1     
+    ## ✔ purrr     1.1.0          
     ## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
     ## ✖ dplyr::filter() masks stats::filter()
     ## ✖ dplyr::lag()    masks stats::lag()
